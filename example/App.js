@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import {
   NativeModules,
   SafeAreaView,
@@ -54,8 +54,13 @@ const Section = ({children, title}) => {
 };
 
 const App = () => {
-  const isDarkMode = useColorScheme() === 'dark';
+  const {RNMokoBeaconSdk} = NativeModules;
 
+  useEffect(() => {
+    NativeModules.RNMokoBeaconSdk.startBeaconSdk('qwert', '123');
+  }, []);
+
+  const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
@@ -76,10 +81,25 @@ const App = () => {
             height: '100%',
           }}>
           <TouchableOpacity
+            style={styles.greyButton}
             onPress={() => {
-              NativeModules.RNMokoBeaconSdk.startBeaconSdk('qwert', '123');
+              RNMokoBeaconSdk.showPeripheral();
             }}>
-            <Text>PRESS HERE</Text>
+            <Text>SHOW PERIPHERAL</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.greenButton}
+            onPress={() => {
+              RNMokoBeaconSdk.startScaniBeacons();
+            }}>
+            <Text>START SCANING BEACONS</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.redButton}
+            onPress={() => {
+              RNMokoBeaconSdk.stopScaniBeacons();
+            }}>
+            <Text>STOP SCANING BEACONS</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -103,6 +123,24 @@ const styles = StyleSheet.create({
   },
   highlight: {
     fontWeight: '700',
+  },
+  redButton: {
+    backgroundColor: '#f00',
+    padding: 10,
+    margin: 10,
+    borderRadius: 10,
+  },
+  greenButton: {
+    backgroundColor: '#0e0',
+    padding: 10,
+    margin: 10,
+    borderRadius: 10,
+  },
+  greyButton: {
+    backgroundColor: '#ccc',
+    padding: 10,
+    margin: 10,
+    borderRadius: 10,
   },
 });
 
