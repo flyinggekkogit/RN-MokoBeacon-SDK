@@ -3,7 +3,7 @@
 
 ## Getting started
 
-`$ npm install react-native-moko-beacon-sdk --save`
+`$ npm install react-native-moko-beacon-sdk --save` or `$ yarn add react-native-moko-beacon-sdk`
 
 ### Mostly automatic installation
 
