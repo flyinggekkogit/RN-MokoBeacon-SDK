@@ -39,7 +39,7 @@
 ```javascript
 import RNMokoBeaconSdk from 'react-native-moko-beacon-sdk';
 
-// TODO: What to do with the module?
-RNMokoBeaconSdk;
+
+RNMokoBeaconSdk.startScaniBeacon();
 ```
   
