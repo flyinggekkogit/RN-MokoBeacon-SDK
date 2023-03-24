@@ -3,7 +3,7 @@
 
 ## Getting started
 
-`$ npm install react-native-moko-beacon-sdk --save`
+`$ npm install react-native-moko-beacon-sdk --save` or `$ yarn add react-native-moko-beacon-sdk`
 
 ### Mostly automatic installation
 
@@ -39,7 +39,7 @@
 ```javascript
 import RNMokoBeaconSdk from 'react-native-moko-beacon-sdk';
 
-// TODO: What to do with the module?
-RNMokoBeaconSdk;
+
+RNMokoBeaconSdk.startScaniBeacon();
 ```
   
