@@ -57,7 +57,7 @@ const App = () => {
   const {RNMokoBeaconSdk} = NativeModules;
 
   useEffect(() => {
-    NativeModules.RNMokoBeaconSdk.startBeaconSdk('qwert', '123');
+    NativeModules.RNMokoBeaconSdk.startBeaconSdk();
   }, []);
 
   const isDarkMode = useColorScheme() === 'dark';
@@ -90,7 +90,14 @@ const App = () => {
           <TouchableOpacity
             style={styles.greenButton}
             onPress={() => {
-              RNMokoBeaconSdk.startScaniBeacons();
+              RNMokoBeaconSdk.startScaniBeacons(
+                () => {
+                  console.log('startScaniBeacons success');
+                },
+                () => {
+                  console.log('startScaniBeacons error');
+                },
+              );
             }}>
             <Text>START SCANING BEACONS</Text>
           </TouchableOpacity>
