@@ -56,10 +56,6 @@ const Section = ({children, title}) => {
 const App = () => {
   const {RNMokoBeaconSdk} = NativeModules;
 
-  useEffect(() => {
-    NativeModules.RNMokoBeaconSdk.startBeaconSdk();
-  }, []);
-
   const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
