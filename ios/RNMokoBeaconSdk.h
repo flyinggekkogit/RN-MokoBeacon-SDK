@@ -7,12 +7,14 @@
 #import <React/RCTBridgeModule.h>
 #endif
 
-@interface RNMokoBeaconSdk : NSObject <RCTBridgeModule>
+#import "HCKBeaconProtocol.h"
 
-@property (nonatomic, weak) id<UIApplicationDelegate> appDelegate;
+@interface RNMokoBeaconSdk : NSObject <RCTBridgeModule, HCKCentralScanDelegate>
+
 
 + (instancetype)sharedInstance;
 
+- (void)runSDK;
 
 @end
    

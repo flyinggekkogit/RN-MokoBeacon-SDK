@@ -1,20 +1,19 @@
 
 #import "RNMokoBeaconSdk.h"
 #import "HCKBeaconCentralManager.h"
+#import <objc/runtime.h>
 
 
 NSString *const centralManagerStateChangedNotification = @"centralManagerStateChangedNotification";
 NSString *const peripheralConnectStateChangedNotification = @"peripheralConnectStateChangedNotification";
 
-NSString *const centralManagerScanNewDeviceModelNotification =
-    @"centralManagerScanNewDeviceModelNotification";
-NSString *const centralManagerStartScanNotification =
-    @"centralManagerStartScanNotification";
-NSString *const centralManagerStopScanNotification =
-    @"centralManagerStopScanNotification";
+NSString *const centralManagerScanNewDeviceModelNotification = @"centralManagerScanNewDeviceModelNotification";
+NSString *const centralManagerStartScanNotification = @"centralManagerStartScanNotification";
+NSString *const centralManagerStopScanNotification = @"centralManagerStopScanNotification";
 
-NSString *const centralManagerDidDiscoverPeripheralNotification =
-    @"centralManagerDidDiscoverPeripheralNotification";
+NSString *const receiveThreeAxisAccelerationDataNotification = @"receiveThreeAxisAccelerationDataNotification";
+
+NSString *const HCKBeaconRssiValueChangedNotification = @"HCKBeaconRssiValueChangedNotification";
 
 
 @implementation RNMokoBeaconSdk
@@ -32,153 +31,62 @@ NSString *const centralManagerDidDiscoverPeripheralNotification =
 {
     return dispatch_get_main_queue();
 }
-RCT_EXPORT_MODULE()
 
-RCT_EXPORT_METHOD(startBeaconSdk)
-{
-    NSLog(@"startBeaconSDK...");
-    
-    NSLog(@"appDelegate >>>>> %@", self.appDelegate);
-    
-    [HCKBeaconCentralManager sharedInstance].stateDelegate = (id<HCKCentralStatesChangedDelegate>) self.appDelegate;
-    
-    [HCKBeaconCentralManager sharedInstance].scanDelegate = (id<HCKCentralScanDelegate>) self.appDelegate;
+- (void)runSDK{
+    [HCKBeaconCentralManager sharedInstance].stateDelegate = (id<HCKCentralStatesChangedDelegate>) self;
+    [HCKBeaconCentralManager sharedInstance].scanDelegate = (id<HCKCentralScanDelegate>) self;
+    [HCKBeaconCentralManager sharedInstance].xyzDelegate = (id<HCKBeaconThreeAxisAccelerationDelegate>) self;
+    [HCKBeaconCentralManager sharedInstance].rssiValueDelegate = (id<HCKBeaconRssiValueChangedDelegate>) self;
     
     [[NSNotificationCenter defaultCenter]
-     addObserver: _appDelegate
-     selector: @selector(listenStartScan:)
+     addObserver:self
+     selector:@selector(listenScanNewDevice:)
+     name:centralManagerScanNewDeviceModelNotification
+     object:nil
+    ];
+    [[NSNotificationCenter defaultCenter]
+     addObserver:self
+     selector:@selector(listenStartScan:)
      name:centralManagerStartScanNotification
      object:nil
     ];
-    
     [[NSNotificationCenter defaultCenter]
-     addObserver: _appDelegate
-     selector: @selector(listenStopScan:)
+     addObserver:self
+     selector:@selector(listenStopScan:)
      name:centralManagerStopScanNotification
      object:nil
     ];
     
-      [[NSNotificationCenter defaultCenter]
-        addObserver: self
-        selector: @selector(listenDidDiscoverPeripheral:)
-        name:centralManagerStateChangedNotification
-        object:nil
-      ];
-      
-      [[NSNotificationCenter defaultCenter]
-        addObserver: self
-        selector: @selector(listenCentralManager:)
-        name:centralManagerStateChangedNotification
-        object:nil
-      ];
-    
-      [[NSNotificationCenter defaultCenter]
-        addObserver: self
-        selector: @selector(listenConnectionStatus:)
-        name:peripheralConnectStateChangedNotification
-        object:nil
-      ];
-      
-      [[NSNotificationCenter defaultCenter]
-        addObserver: self
-        selector: @selector(listenScanNewDevice:)
-        name:centralManagerScanNewDeviceModelNotification
-        object:nil
-      ];
-    
-}
-
-
-#pragma mark - listeners
-- (void)listenCentralManager:(NSNotification *)notification{
-  NSLog(@"listenCentralManager > %@", notification);
-}
-- (void)listenConnectionStatus:(NSNotification *)notification{
-  NSLog(@"listenConnectionStatus >  %@", notification);
-}
-
-- (void)listenScanNewDevice:(NSNotification *)notification{
-  NSLog(@"listenScanNewDevice >  %@", notification);
-}
-- (void)listenStartScan:(NSNotification *)notification{
-  NSLog(@"listenStartScan >  %@", notification);
-}
-- (void)listenStopScan:(NSNotification *)notification{
-  NSLog(@"listenStopScan >  %@", notification);
-}
-
-- (void)listenDidDiscoverPeripheral:(NSNotification *)notification{
-  NSLog(@"listenDidDiscoverPeripheral >  %@", notification);
-}
-
-
-#pragma mark - CBCentralManagerDelegate
-- (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary<NSString *, id> *)advertisementData RSSI:(NSNumber *)RSSI
-{
-  NSLog(@"didDiscoverPeripheral > %@", peripheral.name);
-
-  [[NSNotificationCenter defaultCenter]
-   postNotificationName:centralManagerDidDiscoverPeripheralNotification
-   object:nil
-  ];
-}
-
-- (void)centralManagerDidUpdateState:(CBCentralManager *)central {
-  NSLog(@"didUpdate > %ld", (long)central.state);
-    if (central.state == CBManagerStatePoweredOn) {
-        [central scanForPeripheralsWithServices:nil options:nil];
-    }
-}
-
-#pragma mark - HCKCentralStatesChangedDelegate
-- (void)centralManagerStateChanged:(HCKBeaconCentralManagerState)managerState
-manager:(HCKBeaconCentralManager *)manager
-{
-  NSLog(@"centralManagerStateChanged > %ld", (long)managerState);
-
     [[NSNotificationCenter defaultCenter]
-     postNotificationName:centralManagerStateChangedNotification
+     addObserver: self
+     selector: @selector(listenManagerState:)
+     name:centralManagerStateChangedNotification
+     object:nil
+    ];
+    [[NSNotificationCenter defaultCenter]
+     addObserver: self
+     selector: @selector(listenPeripheralConnectState:)
+     name:peripheralConnectStateChangedNotification
+     object:nil
+    ];
+    
+    [[NSNotificationCenter defaultCenter]
+     addObserver: self
+     selector: @selector(listenReceiveXYZAccelerationData:)
+     name:receiveThreeAxisAccelerationDataNotification
+     object:nil
+    ];
+    [[NSNotificationCenter defaultCenter]
+     addObserver: self
+     selector: @selector(listenHCKBeaconRssiValue:)
+     name:HCKBeaconRssiValueChangedNotification
      object:nil
     ];
 }
 
-- (void)peripheralConnectStateChanged:(HCKBeaconConnectStatus)connectState manager:(HCKBeaconCentralManager *)manager
-{
-  NSLog(@"peripheralConnectStateChanged > %@", manager.description);
+#pragma mark - Export Methods
 
-    [[NSNotificationCenter defaultCenter] postNotificationName:peripheralConnectStateChangedNotification object:nil];
-}
-
-#pragma mark - HCKCentralScanDelegate
-- (void)centralManagerScanNewDeviceModel:(HCKBeaconBaseModel *)beaconModel manager:(HCKBeaconCentralManager *)manager
-{
-  NSLog(@"scanNewDevice >");
-
-  [[NSNotificationCenter defaultCenter]
-   postNotificationName:centralManagerScanNewDeviceModelNotification
-   object:nil
-  ];
-}
-- (void)centralManagerStartScan:(HCKBeaconCentralManager *)manager
-{
-  
-  NSLog(@"startScan > %ld", (long)manager.centralManager.state);
-
-  [[NSNotificationCenter defaultCenter]
-   postNotificationName:centralManagerStartScanNotification
-   object:nil
-  ];
-}
-- (void)centralManagerStopScan:(HCKBeaconCentralManager *)manager
-{
-  NSLog(@"stopScan > %ld",  (long)manager.centralManager.state);
-
-  [[NSNotificationCenter defaultCenter]
-   postNotificationName:centralManagerStopScanNotification
-   object:nil
-  ];
-}
-
+RCT_EXPORT_MODULE()
 
 RCT_EXPORT_METHOD(startScaniBeacons:
                   (RCTResponseSenderBlock)successCallback
@@ -186,7 +94,6 @@ RCT_EXPORT_METHOD(startScaniBeacons:
                   )
 {
     @try {
-        NSLog(@"startScaniBeacons...");
         [[HCKBeaconCentralManager sharedInstance] startScaniBeacons];
         
     } @catch (NSException *exception) {
@@ -197,7 +104,6 @@ RCT_EXPORT_METHOD(startScaniBeacons:
     }
 }
 
-
 RCT_EXPORT_METHOD(stopScaniBeacons)
 {
     [[HCKBeaconCentralManager sharedInstance] stopScaniBeacon];
@@ -205,6 +111,72 @@ RCT_EXPORT_METHOD(stopScaniBeacons)
 
 RCT_EXPORT_METHOD(showPeripheral){}
 
+#pragma mark - listeners
+- (void)listenScanNewDevice:(NSNotification *)notification{
+  NSLog(@"listenScanNewDevice >  %@", notification);
+}
+- (void)listenStartScan:(NSNotification *)notification{
+  NSLog(@"listenStartScan >  %@", notification);
+}
+- (void)listenStopScan:(NSNotification *)notification{
+  NSLog(@"listenStopScan >  %@", notification);
+}
+- (void)listenManagerState:(NSNotification *)notification{
+  NSLog(@"listenManagerState > %@", notification);
+}
+- (void)listenPeripheralConnectState:(NSNotification *)notification{
+    NSLog(@"listenPeripheralConnectState > %@", notification);
+}
+- (void)listenReceiveXYZAccelerationData:(NSNotification *)notification{
+    NSLog(@"listenReceiveXYZAccelerationData > %@", notification);
+}
+- (void)listenHCKBeaconRssiValue:(NSNotification *)notification{
+    NSLog(@"listenHCKBeaconRssiValue > %@", notification);
+}
+
+
+#pragma mark - Selectors Responders
+- (void)centralManagerScanNewDeviceModel:(HCKBeaconBaseModel *)beaconModel manager:(HCKBeaconCentralManager *)manager {
+    [[NSNotificationCenter defaultCenter]
+     postNotificationName:centralManagerScanNewDeviceModelNotification
+     object:nil
+    ];
+}
+- (void)centralManagerStartScan:(HCKBeaconCentralManager *)manager{
+  [[NSNotificationCenter defaultCenter]
+   postNotificationName:centralManagerStartScanNotification
+   object:nil
+  ];
+}
+- (void)centralManagerStopScan:(HCKBeaconCentralManager *)manager{
+    [[NSNotificationCenter defaultCenter]
+     postNotificationName:centralManagerStopScanNotification
+     object:nil
+    ];
+}
+- (void)centralManagerStateChanged:(HCKBeaconCentralManagerState)managerState manager:(HCKBeaconCentralManager *)manager{
+    [[NSNotificationCenter defaultCenter]
+     postNotificationName:centralManagerStateChangedNotification
+     object:nil
+    ];
+}
+- (void)peripheralConnectStateChanged:(HCKBeaconConnectStatus)connectState manager:(HCKBeaconCentralManager *)manager{
+    [[NSNotificationCenter defaultCenter]
+     postNotificationName:peripheralConnectStateChangedNotification
+     object:nil
+    ];
+}
+- (void)receiveThreeAxisAccelerationData:(NSDictionary *)dic{
+    [[NSNotificationCenter defaultCenter]
+     postNotificationName:receiveThreeAxisAccelerationDataNotification
+     object:nil
+    ];
+}
+- (void)HCKBeaconRssiValueChanged:(NSNumber *)rssi{
+    [[NSNotificationCenter defaultCenter]
+     postNotificationName:HCKBeaconRssiValueChangedNotification
+     object:nil
+    ];
+}
 
 @end
-  

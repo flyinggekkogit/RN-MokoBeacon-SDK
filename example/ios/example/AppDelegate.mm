@@ -1,4 +1,5 @@
 #import "AppDelegate.h"
+#import "RNMokoBeaconSdk.h"
 
 #import <React/RCTBridge.h>
 #import <React/RCTBundleURLProvider.h>
@@ -42,7 +43,8 @@
 #endif
 
   UIView *rootView = RCTAppSetupDefaultRootView(bridge, @"example", nil);
-
+  [[RNMokoBeaconSdk sharedInstance] runSDK];
+    
   if (@available(iOS 13.0, *)) {
     rootView.backgroundColor = [UIColor systemBackgroundColor];
   } else {
