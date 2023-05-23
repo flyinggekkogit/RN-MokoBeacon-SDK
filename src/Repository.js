@@ -92,6 +92,7 @@ export default class Repository {
       await this.putData(Repository.initialData);
     }*/
 
+    // In mongo db i have field "country" I want to get all the documents where countries not Japan or Austria using $match
     return true;
   }
 
